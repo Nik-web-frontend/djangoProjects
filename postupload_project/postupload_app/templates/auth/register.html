@@ -1,0 +1,87 @@
+{% load static%}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Icon  -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <!-- font file  -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=LXGW+WenKai+Mono+TC&family=Patrick+Hand&family=Quicksand:wght@300..700&display=swap"
+        rel="stylesheet">
+    <title>Registration Form</title>
+    <!-- CSS File  -->
+    <link rel="stylesheet" href="{% static 'css/register.css' %}">
+</head>
+
+<body>
+    <div class="main-container">
+        <h2 class="mini-post-heading">Mini Post Upload</h2>
+        <div class="form-container">
+            <h3>Registration Page</h3>
+            <form method="POST" action="{% url 'register' %}">
+                {% csrf_token %}
+
+                <input type="text" name="{{form.username.name}}" value="{{form.username.value}}"
+                    placeholder="Username" />
+                <span class="error">{{form.username.errors}}</span>
+
+
+                <div class="password-container">
+                    <input type="password" name="{{form.password1.name}}" value="{{form.password1.value}}"
+                        placeholder="Password" />
+                    <i class="fa-solid fa-lock toggle-password eye" style="color: #0022ca;"></i>  
+                </div>
+                <span class="error">{{form.password1.errors}}</span>
+
+
+
+               <div class="password-container">
+                    <input type="password" name="{{form.password2.name}}" value="{{form.password2.value}}"
+                        placeholder="Confirm Password" />
+                    <i class="fa-solid fa-lock toggle-password eye" style="color: #0022ca;"></i>
+                </div>
+                <span class="error">{{form.password2.errors}}</span>
+
+                <div class="btn">
+                    <button type="submit">Submit</button>
+
+                    <a href="{% url 'login' %}">
+                        Login
+                    </a>
+
+
+
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        document.querySelectorAll(".password-container").forEach(container => {
+            const input = container.querySelector("input");
+            const icon = container.querySelector(".toggle-password");
+
+            icon.addEventListener("click", () => {
+                if (input.type === "password") {
+                    input.type = "text";
+                    icon.classList.replace("fa-lock", "fa-lock-open");
+                } else {
+                    input.type = "password";
+                    icon.classList.replace("fa-lock-open", "fa-lock");
+                }
+            });
+        });
+    </script>
+
+</body>
+
+</html>

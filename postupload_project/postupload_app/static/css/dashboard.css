@@ -1,0 +1,39 @@
+
+.content{
+    display: flex;
+    justify-content: center;
+}
+
+.content a{
+    text-decoration: none;
+    font-weight: 600;
+    color: black;
+    background-color: white;
+    padding: 8px;
+    border-radius: 4px;
+    width: 100px;
+    text-align: center;
+}
+
+.content a:hover{
+    background-color: rgb(27, 27, 27);
+    color: #b7e7dd;
+}
+
+.post-container{
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    padding: 10px;
+}
+
+.add-post{
+    height: 450px;
+    width: 300px;
+    background-color: rgba(255, 255, 255, 0.497);
+    font-size: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+}

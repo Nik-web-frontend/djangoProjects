@@ -1,0 +1,155 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body{
+    background-color: #b7e7dd;
+    font-family: 'quicksand';
+}
+
+.main-container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    .mini-post-heading{
+        margin: 3rem 0;
+    }
+}
+
+.form-container{
+    background-color: white;
+    border-radius: 10px;
+    width: 750px;
+    padding: 2rem 3rem;
+
+    h3{
+        margin-bottom: 18px;
+    }
+}
+
+form{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+input{
+    border: none;
+    outline: none;
+    background-color: #b7e7dd;
+    color: black;
+    font-size: 1rem;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+input::placeholder{
+    color: rgb(82, 82, 82);
+    font-family: 'quicksand';
+    font-weight: 600;
+    
+}
+
+.btn{
+    display: flex;
+    align-items: center;
+    gap: 20px;
+
+    a{
+        text-decoration: none;
+        color: black;
+        font-weight: 600;
+        background-color: #b7e7dd;
+        width: 30%;
+        padding: 8px;
+        border-radius: 5px;
+        text-align: center;
+    }
+    a:hover{
+        background-color: rgb(27, 27, 27);
+        color: #b7e7dd;
+    }
+}
+
+button{
+    width: 30%;
+    background-color: #b7e7dd;
+    color: black;
+    border: none;
+    outline: none;
+    font-size: 1rem;
+    padding: 8px;
+    border-radius: 5px;
+    text-align: center;
+    font-family: 'quicksand';
+    font-weight: 600;
+}
+
+button:hover{
+    background-color: rgb(27, 27, 27);
+    color: #b7e7dd;
+}
+
+.error{
+    color: orangered;
+    li{
+
+        list-style: none;
+    }
+}
+
+.password-container{
+    position: relative;
+    /* background-color: red; */
+    input{
+        width: 100%;
+    }
+}
+
+.eye{
+    position:absolute; 
+    right:15px; 
+    top:50%; 
+    transform:translateY(-50%);
+    cursor:pointer;
+    z-index: 99;
+    
+}
+
+@media (max-width: 768px) {
+    .form-container{
+        width: 90%;
+        padding: 20px;
+    }
+}
+
+@media (max-width: 500px) {
+    input{
+        font-size: 12px;
+        padding: 7px;
+        border-radius: 4px;
+    }
+
+    button{
+        font-size: 13px;
+        font-weight: 500;
+        width: 50%;
+    }
+
+    .btn{
+        a{
+            font-size: 13px;
+            width: 50%;
+            font-weight: 500;
+        }
+    }
+
+    .error{
+        font-size: 12px;
+    }
+
+
+}
