@@ -36,12 +36,11 @@
 
 
 
-<div id="profileModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-     background: rgba(0,0,0,0.5); justify-content:center; align-items:center;">
-    <div style="background:white; padding:20px; border-radius:8px; width:300px;">
-        <span id="closeModal" style="float:right; cursor:pointer;">&times;</span>
-        <h3>Edit Profile</h3>
+<div id="profileModal">
+    <div class="profile-form">
 
+        <h3>Edit Profile</h3>
+        <button class="profile-close">❌</button>
         <!-- Edit Form -->
         <form method="POST" action="{% url 'profile' %}" enctype="multipart/form-data">
             {% csrf_token %}
@@ -55,29 +54,126 @@
             <input type="file" name="profile_pic" />
 
             <button type="submit">Save Changes</button>
+            <button id="del-profile" type="button">Delete Profile</button>
         </form>
 
-        <button id="del-profile">Delete Profile</button>
         <!-- Delete Profile Form -->
 
     </div>
 </div>
 
-<div class="del-popup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-     background: rgba(0,0,0,0.5); justify-content:center; align-items:center;">
-    <div style="background:white; padding:20px; border-radius:8px; width:300px;">
+<div class="del-popup">
+    <div class="del-content">
         <form method="POST" action="{% url 'delete_profile' %}" style="margin-top:10px;">
             {% csrf_token %}
-            <button type="submit" style="background:red; color:white;">Delete Profile</button>
+            <p>Do you really want to delete your profile?</p>
+            <div class="btns-del-cancel">
+
+                <button type="submit">Delete Profile</button>
+                <button class="profile-cancel" type="button">Cancel</button>
+            </div>
         </form>
-        <button class="profile-cancel">Cancel</button>
     </div>
 </div>
 
+<br>
+<br>
+
+<hr>
+
+<br>
+<br>
+
+<!-- Upload Post Button -->
+
+
+<div id="uploadPopup">
+    <div class="upload-content">
+        <form method="POST" enctype="multipart/form-data" action="{% url 'upload_post' %}">
+            {% csrf_token %}
+            <h3>Upload Post</h3>
+            <input type="text" name="title" placeholder="Post Title" required><br>
+            <textarea name="description" placeholder="Description" required></textarea><br>
+            <p style="font-weight: 600;margin-bottom: 5px;">Post Image:</p>
+            <input type="file" name="post_img" required><br>
+            <button type="submit">Upload</button>
+            <button type="button" onclick="document.getElementById('uploadPopup').style.display='none'">Cancel</button>
+        </form>
+    </div>
+</div>
+
+<h2 class="my-posts">My Posts</h2>
+<br>
+<br>
+<!-- <div class="post-section"> -->
+
+<div class="posts">
+    <button id="uploadBtn">➕</button>
+    {% for post in posts %}
+    <div class="card">
+        {% if post.post_img %}
+        <img class="post-img" src="{{ post.post_img.url }}" alt="Post Image">
+        {% endif %}
+
+        <div class="user-details">
+            {% if profile.profile_pic %}
+            <img class="profile-img" src="{{ profile.profile_pic.url }}">
+            {% else %}
+            <p
+                style="border-radius: 50%; background-color: teal; height: 100px; width: 100px; text-align: center;display: flex;align-items: center;justify-content: center;">
+                ❕</p>
+
+            {% endif %}
+            <div>
+                {%if profile.name and profile.profession%}
+                <p style="font-size: 18px;font-weight: 600; font-family: 'quicksand';">{{ profile.name }}</p>
+                <p
+                    style="font-size: 14px;font-weight: 550; color: rgb(48, 47, 47);font-family: 'quicksand', Courier, monospace;">
+                    {{ profile.profession }}</p>
+                {%else%}
+                <p style="font-size: 18px;font-weight: 600; font-family: 'quicksand';">{{ request.user.username }}</p>
+                <p
+                    style="font-size: 14px;font-weight: 550; color: rgb(48, 47, 47);font-family: 'quicksand', Courier, monospace;">
+                    Profession</p>
+                {%endif%}
+            </div>
+        </div>
+
+        <h4>{{ post.title }}</h4>
+        <p class="descrip">{{ post.description }}</p>
+
+        <button class="edit-btn" data-post-id="{{ post.id }}" data-title="{{ post.title }}"
+            data-description="{{ post.description }}">
+            Edit
+        </button>
+
+        <!-- Delete button -->
+        <form method="POST" action="{% url 'delete_post' post.id %}">
+            {% csrf_token %}
+            <button type="submit" class="post-del"><i class="fa-solid fa-trash" style="color: #ff0000;"></i></button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+
+<div id="editPopup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+     background:rgba(0,0,0,0.6); justify-content:center; align-items:center;">
+    <div style="background:white; padding:20px; border-radius:8px; width:350px;">
+        <form id="editForm" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="text" name="title" id="editTitle" placeholder="Title" required><br>
+            <textarea name="description" id="editDescription" rows="4"></textarea><br>
+            <input type="file" name="post_img"><br><br>
+            <button type="submit">Update</button>
+            <button type="button" id="closePopup">Cancel</button>
+        </form>
+    </div>
+</div>
+<!-- </div> -->
 <script>
     const modal = document.getElementById('profileModal');
     const btn = document.getElementById('manageProfileBtn');
-    const close = document.getElementById('closeModal');
+    const close = document.querySelector('.profile-close')
 
     btn.onclick = function () {
         modal.style.display = 'flex'; // show popup
@@ -105,6 +201,40 @@
     cancelBtn.onclick = function () {
         delPopup.style.display = 'none'; // hide popup
     }
+
+    document.getElementById("uploadBtn").onclick = function () {
+        document.getElementById("uploadPopup").style.display = "flex";
+    }
+
+    // --------------------------------------------------------------- 
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const popup = document.getElementById("editPopup");
+        const closePopup = document.getElementById("closePopup");
+        const editForm = document.getElementById("editForm");
+        const editTitle = document.getElementById("editTitle");
+        const editDescription = document.getElementById("editDescription");
+
+        document.querySelectorAll(".edit-btn").forEach(btn => {
+            btn.addEventListener("click", function () {
+                const postId = this.getAttribute("data-post-id");
+                const title = this.getAttribute("data-title");
+                const description = this.getAttribute("data-description");
+
+                editTitle.value = title;
+                editDescription.value = description;
+
+                // update form action dynamically
+                editForm.action = `/post/${postId}/edit/`;
+
+                popup.style.display = "flex";
+            });
+        });
+
+        closePopup.addEventListener("click", function () {
+            popup.style.display = "none";
+        });
+    });
 
 </script>
 

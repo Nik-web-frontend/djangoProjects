@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from .models import UserProfile
+from .models import UserProfile, Post
 
 # Create your views here.
 
@@ -46,25 +46,24 @@ def logout_view(request):
 
 @login_required(login_url='login')
 def profile_view(request):
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+
+    # Fetch all posts of logged-in user
+    posts = Post.objects.filter(user=request.user)
+
     if request.method == "POST":
         name = request.POST.get("name")
         profession = request.POST.get("profession")
         profile_pic = request.FILES.get("profile_pic")
 
-        # Check if user already has a profile
-        profile, created = UserProfile.objects.get_or_create(user=request.user)
         profile.name = name
         profile.profession = profession
         if profile_pic:
             profile.profile_pic = profile_pic
         profile.save()
+        return redirect("profile")
 
-        return redirect("profile")  # reload profile page
-
-    else:
-        profile, created = UserProfile.objects.get_or_create(user=request.user)
-        return render(request, "profile.html", {"profile": profile})
-    
+    return render(request, "profile.html", {"profile": profile, "posts": posts})
 
 
 @login_required(login_url='login')
@@ -75,3 +74,47 @@ def delete_profile(request):
         return redirect('dashboard')  # after deleting, go to dashboard (or login page)
     return redirect('profile')  # if not POST, just go back
 
+
+@login_required(login_url='login')
+def upload_post(request):
+    if request.method == "POST":
+        title = request.POST.get("title")
+        description = request.POST.get("description")
+        post_img = request.FILES.get("post_img")
+
+        Post.objects.create(
+            user=request.user,
+            title=title,
+            description=description,
+            post_img=post_img
+        )
+
+        return redirect("profile")
+    return redirect("profile")
+
+
+@login_required(login_url='login')
+def delete_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id, user=request.user)
+    post.delete()
+    return redirect("profile")
+
+
+@login_required(login_url='login')
+def edit_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id, user=request.user)  # only owner can edit
+
+    if request.method == "POST":
+        title = request.POST.get("title")
+        description = request.POST.get("description")
+        post_img = request.FILES.get("post_img")
+
+        post.title = title
+        post.description = description
+        if post_img:  # update only if new image uploaded
+            post.post_img = post_img
+        post.save()
+
+        return redirect("profile")
+
+    
