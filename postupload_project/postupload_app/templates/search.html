@@ -1,0 +1,246 @@
+{% extends 'layouts/app.html' %}
+
+{%block css%}
+<style>
+    .search-feed {
+        background-color: cadetblue;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        margin-top: 40px;
+    }
+
+    .card {
+        height: 500px;
+        width: 350px;
+        background-color: white;
+        padding: 10px;
+        margin-bottom: 4px;
+        border-radius: 5px;
+        display: flex;
+        flex-direction: column;
+        border-radius: 8px;
+
+    }
+
+    .card .post-img {
+        max-width: 100%;
+        max-height: 60vh;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .profile-pic {
+        height: 60px;
+        width: 60px;
+        border-radius: 50%;
+    }
+
+    .profile-info {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 15px;
+    }
+
+    .end {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 8px;
+        gap: 10px;
+    }
+
+    .description-container {
+        max-width: 300px;
+    }
+
+    .desc-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        justify-content: center;
+        align-items: center;
+    }
+
+    .desc-modal-content {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 400px;
+    }
+
+    .description {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+
+    }
+
+    .read-more-btn {
+        background-color: white;
+        color: #0000a8;
+        outline: none;
+        border: none;
+        cursor: pointer;
+    }
+
+    /* POST IMG OPEN  */
+    .img-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        justify-content: center;
+        align-items: center;
+    }
+
+    .img-modal .modal-content {
+        max-width: 90%;
+        max-height: 90%;
+        border-radius: 10px;
+        box-shadow: 0 0 20px #000;
+    }
+
+    .img-modal .close-img {
+        position: absolute;
+        top: 20px;
+        right: 40px;
+        font-size: 40px;
+        color: white;
+        cursor: pointer;
+    }
+
+    .profile-link{
+        text-decoration: none;
+        color: black;
+    }
+</style>
+
+{%endblock%}
+
+{% block content %}
+<h2>Search Results for "{{ query }}"</h2>
+
+{% if results %}
+<div class="search-feed">
+    {% for post in results %}
+    <div class="card">
+        {% if post.post_img %}
+        <img src="{{ post.post_img.url }}" class="post-img" style="cursor: pointer;">
+        {% endif %}
+
+        <div id="img-modal" class="img-modal">
+            <span class="close-img">&times;</span>
+            <img class="modal-content" id="modal-img">
+        </div>
+        <a href="{% url 'user_profile' post.user.username %}" class="profile-link">
+            <div class="profile-info">
+                {% if post.user.userprofile.profile_pic %}
+                <img src="{{ post.user.userprofile.profile_pic.url }}" class="profile-pic">
+
+                {% else %}
+                <p
+                    style="border-radius: 50%; background-color: teal; height: 60px; width: 60px; text-align: center;display: flex;align-items: center;justify-content: center;">
+                    ❕
+                </p>
+                {% endif %}
+                <div>
+                    {% if post.user.userprofile.name %}
+                    <h4>{{ post.user.userprofile.name }}</h4>
+                    {% else %}
+                    <h4>{{ post.user.username }}</h4>
+                    {% endif %}
+                    {% if post.user.userprofile.profession %}
+                    <p>{{ post.user.userprofile.profession }}</p>
+                    {% else %}
+                    <p>Individual</p>
+                    {% endif %}
+                </div>
+            </div>
+        </a>
+        <h4>{{ post.title }}</h4>
+        <div class="description-container">
+            <p class="description">{{ post.description}}</p>
+            {% if post.description|length > 100 %}
+            <button class="read-more-btn">Read more</button>
+            {% endif %}
+        </div>
+
+
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p>No results found.</p>
+{% endif %}
+
+<div class="end">
+    <p>End Of Results</p>
+</div>
+
+<div id="desc-modal" class="desc-modal">
+    <div class="desc-modal-content">
+        <span class="close-btn">&times;</span>
+        <h4 id="modal-title"></h4>
+        <p id="full-desc"></p>
+    </div>
+</div>
+
+{% endblock %}
+
+{%block script%}
+<script>
+    // Description modal
+    const modal = document.getElementById('desc-modal');
+    const fullDesc = document.getElementById('full-desc');
+    const modalTitle = document.getElementById('modal-title');
+    const closeBtn = modal.querySelector('.close-btn');
+
+
+    document.querySelectorAll('.read-more-btn').forEach(btn => {
+        btn.onclick = () => {
+            const description = btn.previousElementSibling.textContent;
+            const title = btn.closest('.card').querySelector('h4').textContent;
+            fullDesc.textContent = description;
+            modalTitle.textContent = title;
+            modal.style.display = 'flex';
+        };
+    });
+
+
+    // Close modal
+    closeBtn.onclick = () => modal.style.display = 'none';
+    window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+
+    // ------------------------------------------------------------------- 
+    // Open post img 
+    const imgpopup = document.getElementById('img-modal');
+    const modalImg = document.getElementById('modal-img');
+    const closeimg = imgpopup.querySelector('.close-img');
+
+    // For all post images
+    document.querySelectorAll('.post-img').forEach(img => {
+        img.addEventListener('click', () => {
+            imgpopup.style.display = "flex";
+            modalImg.src = img.src;
+        });
+    });
+
+    closeimg.addEventListener('click', () => {
+        imgpopup.style.display = "none";
+    });
+
+</script>
+{%endblock%}

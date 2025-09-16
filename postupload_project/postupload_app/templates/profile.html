@@ -30,7 +30,9 @@
 
 
         <br><br>
+        {%if is_owner%}
         <button id="manageProfileBtn">Manage Profile</button>
+        {%endif%}
     </div>
 </div>
 
@@ -108,19 +110,34 @@
 <!-- <div class="post-section"> -->
 
 <div class="posts">
-    <button id="uploadBtn">➕</button>
+    {%if is_owner%}
+    <button id="uploadBtn">
+        <p
+            style="border-radius: 50%; font-size: 50px;background-color: rgb(120, 195, 7);height: 80px; width: 80px; align-items: center; display: flex;justify-content: center;">
+            <i class="fa-solid fa-plus" style="color: #ffffff;"></i>
+        </p>
+    </button>
+    {%endif%}
+
     {% for post in posts %}
     <div class="card">
         {% if post.post_img %}
-        <img class="post-img" src="{{ post.post_img.url }}" alt="Post Image">
+        <img class="post-img" src="{{ post.post_img.url }}" alt="Post Image" style="cursor: pointer;">
         {% endif %}
+
+        <!-- Image Modal -->
+        <div id="img-modal" class="img-modal">
+            <span class="close-img">&times;</span>
+            <img class="modal-content" id="modal-img">
+        </div>
+
 
         <div class="user-details">
             {% if profile.profile_pic %}
             <img class="profile-img" src="{{ profile.profile_pic.url }}">
             {% else %}
             <p
-                style="border-radius: 50%; background-color: teal; height: 100px; width: 100px; text-align: center;display: flex;align-items: center;justify-content: center;">
+                style="border-radius: 50%; background-color: teal; height: 60px; width: 60px; text-align: center;display: flex;align-items: center;justify-content: center;">
                 ❕</p>
 
             {% endif %}
@@ -131,7 +148,8 @@
                     style="font-size: 14px;font-weight: 550; color: rgb(48, 47, 47);font-family: 'quicksand', Courier, monospace;">
                     {{ profile.profession }}</p>
                 {%else%}
-                <p style="font-size: 18px;font-weight: 600; font-family: 'quicksand';">{{ request.user.username }}</p>
+                <p style="font-size: 18px;font-weight: 600; font-family: 'quicksand';">{{ request.user.username }}
+                </p>
                 <p
                     style="font-size: 14px;font-weight: 550; color: rgb(48, 47, 47);font-family: 'quicksand', Courier, monospace;">
                     Profession</p>
@@ -139,30 +157,66 @@
             </div>
         </div>
 
-        <h4>{{ post.title }}</h4>
-        <p class="descrip">{{ post.description }}</p>
+        <h4 style="margin: 10px 0;" class="post-title">{{ post.title }}</h4>
 
-        <button class="edit-btn" data-post-id="{{ post.id }}" data-title="{{ post.title }}"
-            data-description="{{ post.description }}">
-            Edit
-        </button>
+        <div class="description-container">
 
-        <!-- Delete button -->
-        <form method="POST" action="{% url 'delete_post' post.id %}">
-            {% csrf_token %}
-            <button type="submit" class="post-del"><i class="fa-solid fa-trash" style="color: #ff0000;"></i></button>
-        </form>
+            <p class="description">{{ post.description }}</p>
+            <button class="read-more-btn">Read more</button>
+        </div>
+        <!-- READ MORE POPUP  -->
+        <!-- Modal -->
+        <div id="desc-modal" class="desc-modal">
+            <div class="desc-modal-content">
+                <span class="close-btn">&times;</span>
+                <h4 id="modal-title" style="margin: 10px 0;"></h4>
+                <p id="full-desc"></p>
+            </div>
+        </div>
+
+
+        <div class="action-btn">
+            <small style="color: gray;">Created: {{ post.created_at|date:"M d, Y H:i" }}</small>
+            {%if is_owner%}
+
+            <button class="edit-btn" data-post-id="{{ post.id }}" data-title="{{ post.title }}"
+                data-description="{{ post.description }}">
+                <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button class="del-post-popup-btn" data-post-id="{{ post.id }}">
+                <i class="fa-solid fa-trash" style="color: #ff0000;"></i>
+            </button>
+            {%endif%}
+
+        </div>
+        <div class="del-post-container" style="display: none;">
+            <div class="del-post-popup">
+                <form method="POST" class="delpost-form" action="">
+                    {% csrf_token %}
+                    <h3>Do you really want to delete this post?</h3>
+                    <button type="submit" class="post-del">Delete</button>
+                    <button type="button" class="del-post-cancel">Cancel</button>
+                </form>
+            </div>
+        </div>
+
     </div>
+
     {% endfor %}
 </div>
 
+<!-- EDIT POPUP  -->
 <div id="editPopup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
      background:rgba(0,0,0,0.6); justify-content:center; align-items:center;">
     <div style="background:white; padding:20px; border-radius:8px; width:350px;">
         <form id="editForm" method="POST" enctype="multipart/form-data">
             {% csrf_token %}
-            <input type="text" name="title" id="editTitle" placeholder="Title" required><br>
-            <textarea name="description" id="editDescription" rows="4"></textarea><br>
+            <h3 style="margin-bottom: 15px;">Edit Post</h3>
+            <p style="margin-bottom: 5px;">Title</p>
+            <input type="text" name="title" id="editTitle" placeholder="Title" required
+                style="margin-bottom: 10px;"><br>
+            <p style="margin-bottom: 5px;">Description</p>
+            <textarea name="description" id="editDescription" style="width: 300px;"></textarea><br>
             <input type="file" name="post_img"><br><br>
             <button type="submit">Update</button>
             <button type="button" id="closePopup">Cancel</button>
@@ -207,7 +261,7 @@
     }
 
     // --------------------------------------------------------------- 
-
+    // POST EDIT BUTTON 
     document.addEventListener("DOMContentLoaded", function () {
         const popup = document.getElementById("editPopup");
         const closePopup = document.getElementById("closePopup");
@@ -235,6 +289,86 @@
             popup.style.display = "none";
         });
     });
+
+    // ---------------------------------------------------- 
+    //  POST DELETE BUTTON 
+
+    // sab delete buttons select karo
+    document.querySelectorAll('.del-post-popup-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+
+            const postId = btn.getAttribute('data-post-id'); // button se post.id lo
+
+            const popupContainer = document.querySelector('.del-post-container');
+            const delForm = popupContainer.querySelector('.delpost-form');
+
+            // form action update karo sahi post ke liye
+            delForm.action = `/delete_post/${postId}/`;
+
+            // popup show karo
+            popupContainer.style.display = 'flex';
+        });
+    });
+
+    // Cancel button click pe popup close karo
+    document.querySelector('.del-post-cancel').addEventListener('click', () => {
+        document.querySelector('.del-post-container').style.display = 'none';
+    });
+
+    // -------------------------------------------------------------------------- 
+    // Description Read more or less 
+    const modall = document.getElementById('desc-modal');
+    const fullDesc = document.getElementById('full-desc');
+    const closeBtn = modall.querySelector('.close-btn');
+    const modalTitle = document.getElementById('modal-title');
+
+    document.querySelectorAll('.read-more-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const card = btn.closest(".card"); // parent card
+            const title = card.querySelector(".post-title").textContent;
+            const description = card.querySelector(".description").textContent;
+
+            modalTitle.textContent = title;
+            fullDesc.textContent = description;
+            modall.style.display = 'flex';
+        });
+    });
+
+    closeBtn.addEventListener('click', () => {
+        modall.style.display = 'none';
+    });
+
+    window.addEventListener('click', (e) => {
+        if (e.target === modall) modall.style.display = 'none';
+    });
+
+    // POST IMG OPEN 
+
+
+
+    const imgpopup = document.getElementById('img-modal');
+    const modalImg = document.getElementById('modal-img');
+    const closeimg = imgpopup.querySelector('.close-img');
+
+    // For all post images
+    document.querySelectorAll('.post-img').forEach(img => {
+        img.addEventListener('click', () => {
+            imgpopup.style.display = "flex";
+            modalImg.src = img.src;
+        });
+    });
+
+    closeimg.addEventListener('click', () => {
+        imgpopup.style.display = "none";
+    });
+
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            imgpopup.style.display = "none";
+        }
+    });
+
 
 </script>
 

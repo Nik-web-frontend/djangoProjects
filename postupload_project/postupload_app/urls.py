@@ -12,6 +12,8 @@ urlpatterns = [
     path("upload_post/", views.upload_post, name="upload_post"),
     path("delete_post/<int:post_id>/", views.delete_post, name="delete_post"),
     path("post/<int:post_id>/edit/", views.edit_post, name="edit_post"),
+    path("search/", views.search_view, name="search"),
+    path("user/<str:username>/", views.user_profile_view, name="user_profile"),
 
 
 ]

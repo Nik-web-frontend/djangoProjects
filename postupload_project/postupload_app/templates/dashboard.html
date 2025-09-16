@@ -2,19 +2,260 @@
 
 {% load static %}
 {% block css %}
-    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<style>
+    .feed-container {
+        height: 100%;
+        /* Full screen */
+        overflow-y: scroll;
+        scroll-snap-type: y mandatory;
+        scrollbar-width: none;
+        /* Firefox hide scrollbar */
+    }
+
+    .feed-container::-webkit-scrollbar {
+        display: none;
+        /* Chrome hide scrollbar */
+    }
+
+    .feed {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        margin-top: 70px;
+    }
+
+    .post-card {
+        height: 500px;
+        width: 350px;
+        scroll-snap-align: start;
+        padding: 10px;
+        box-sizing: border-box;
+        background: white;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        flex-direction: column;
+        border-radius: 8px;
+
+        /* align-items: center;
+        justify-content: center; */
+    }
+
+    .post-img {
+        max-width: 100%;
+        max-height: 60vh;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        cursor: pointer;
+    }
+
+    .profile-info {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 15px;
+    }
+
+    .profile-pic {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+    }
+
+    .description-container {
+
+        width: 100%;
+    }
+
+    .description-container .description {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        /* show only 3 lines */
+        line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-align: start;
+    }
+
+    .read-more-btn {
+        margin-top: 5px;
+        background: white;
+        color: #0000a8;
+        border: none;
+        padding: 5px 0;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+
+    /* POST IMG OPEN  */
+    .img-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        justify-content: center;
+        align-items: center;
+    }
+
+    .img-modal .modal-content {
+        max-width: 90%;
+        max-height: 90%;
+        border-radius: 10px;
+        box-shadow: 0 0 20px #000;
+    }
+
+    .img-modal .close-img {
+        position: absolute;
+        top: 20px;
+        right: 40px;
+        font-size: 40px;
+        color: white;
+        cursor: pointer;
+    }
+
+    .profile-link{
+        text-decoration: none;
+        color: black;
+    }
+</style>
 {% endblock%}
 
 {% block content %}
 
-    <div class="content">
-        <h3>Welcome <span>{{request.user.username}}</span>!</h3>
-    </div>
-  
-    <div class="post-container">
-        <div class="add-post">
-            ➕
+
+
+<div class="feed-container" id="feed-container">
+    <div class="feed" id="feed">
+        {% for post in posts %}
+        <div class="post-card">
+            <!-- Post Image -->
+            {% if post.post_img %}
+            <img src="{{ post.post_img.url }}" class="post-img" alt="Post Image">
+            {% endif %}
+
+            <div id="img-modal" class="img-modal">
+                <span class="close-img">&times;</span>
+                <img class="modal-content" id="modal-img">
+            </div>
+
+            <!-- Profile Info -->
+            <a href="{% url 'user_profile' post.user.username %}" class="profile-link">
+
+                <div class="profile-info">
+                    {% if post.user.userprofile.profile_pic %}
+                    <img src="{{ post.user.userprofile.profile_pic.url }}" class="profile-pic">
+                    {%else%}
+                    <p
+                        style="border-radius: 50%; background-color: teal; height: 60px; width: 60px; text-align: center;display: flex;align-items: center;justify-content: center;">
+                        ❕</p>
+                    {% endif %}
+                    <div>
+                        {%if post.user.userprofile.name %}
+                        <h4>{{ post.user.userprofile.name }}</h4>
+                        {%else%}
+                        <h4>{{post.user.username}}</h4>
+                        {%endif%}
+                        {%if post.user.userprofile.profession %}
+                        <p>{{ post.user.userprofile.profession }}</p>
+                        {%else%}
+                        <p>Individual</p>
+                        {%endif%}
+                    </div>
+                </div>
+            </a>
+            <!-- Title & Description -->
+            <h3 style="margin-bottom: 6px;">{{ post.title }}</h3>
+            <div class="description-container">
+                <p class="description">{{ post.description }}</p>
+                {% if post.description|length > 100 %}
+                <button class="read-more-btn">Read more</button>
+                {% endif %}
+            </div>
+
+            <!-- Modal -->
+            <div id="desc-modal" class="desc-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+     justify-content:center; align-items:center; background: rgba(0,0,0,0.5);">
+                <div class="desc-modal-content"
+                    style="background:white; padding:20px; border-radius:8px; width:400px; max-width:90%;">
+                    <span class="close-btn" style="cursor:pointer; font-size:20px;">&times;</span>
+                    <h4>Description</h4>
+                    <p id="full-desc"></p>
+                </div>
+            </div>
         </div>
+        <hr>
+        <hr>
+        {% endfor %}
     </div>
+    <div id="end-trigger"></div>
+</div>
+
 
 {% endblock %}
+
+{%block script%}
+<script>
+    const feed = document.getElementById('feed');
+    const endTrigger = document.getElementById('end-trigger');
+
+    const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+            // Clone posts again when last one is visible
+            const clone = feed.innerHTML;
+            feed.insertAdjacentHTML('beforeend', clone);
+        }
+    });
+
+    observer.observe(endTrigger);
+
+    const container = document.querySelector('.feed-container');
+    const modal = document.getElementById('desc-modal');
+    const fullDesc = document.getElementById('full-desc');
+    const closeBtn = modal.querySelector('.close-btn');
+
+    // Event delegation for Read More buttons
+    container.addEventListener('click', (e) => {
+        if (e.target.classList.contains('read-more-btn')) {
+            const description = e.target.previousElementSibling.textContent;
+            fullDesc.textContent = description;
+            modal.style.display = 'flex';
+        }
+    });
+
+    // Close modal
+    closeBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+
+    // Click outside modal to close
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) modal.style.display = 'none';
+    });
+
+    // ------------------------------------------------------------------- 
+    // Open post img 
+    const imgpopup = document.getElementById('img-modal');
+    const modalImg = document.getElementById('modal-img');
+    const closeimg = imgpopup.querySelector('.close-img');
+
+    // For all post images
+    document.querySelectorAll('.post-img').forEach(img => {
+        img.addEventListener('click', () => {
+            imgpopup.style.display = "flex";
+            modalImg.src = img.src;
+        });
+    });
+
+    closeimg.addEventListener('click', () => {
+        imgpopup.style.display = "none";
+    });
+
+
+</script>
+
+{%endblock%}

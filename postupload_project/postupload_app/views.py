@@ -3,6 +3,9 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from .models import UserProfile, Post
+from django.db import models
+from django.db.models import Q
+from django.contrib.auth.models import User
 
 # Create your views here.
 
@@ -38,7 +41,8 @@ def login_view(request):
 
 @login_required(login_url='login')  
 def dashboard_view(request):
-    return render(request, 'dashboard.html')
+    posts = Post.objects.all().order_by("-created_at")  # latest first
+    return render(request, "dashboard.html", {"posts": posts})
 
 def logout_view(request):
     logout(request)
@@ -49,7 +53,8 @@ def profile_view(request):
     profile, created = UserProfile.objects.get_or_create(user=request.user)
 
     # Fetch all posts of logged-in user
-    posts = Post.objects.filter(user=request.user)
+    # posts = Post.objects.filter(user=request.user)
+    posts = Post.objects.filter(user=request.user).order_by('-created_at')
 
     if request.method == "POST":
         name = request.POST.get("name")
@@ -63,7 +68,7 @@ def profile_view(request):
         profile.save()
         return redirect("profile")
 
-    return render(request, "profile.html", {"profile": profile, "posts": posts})
+    return render(request, "profile.html", {"profile": profile, "posts": posts,  "is_owner": True})
 
 
 @login_required(login_url='login')
@@ -81,6 +86,7 @@ def upload_post(request):
         title = request.POST.get("title")
         description = request.POST.get("description")
         post_img = request.FILES.get("post_img")
+        created_at = models.DateTimeField(auto_now_add=True)
 
         Post.objects.create(
             user=request.user,
@@ -117,4 +123,32 @@ def edit_post(request, post_id):
 
         return redirect("profile")
 
-    
+
+@login_required(login_url='login')
+def search_view(request):
+    query = request.GET.get("q", "")
+    results = []
+
+    if query:
+        results = Post.objects.filter(
+            Q(title__icontains=query) | 
+            Q(user__username__icontains=query) |
+            Q(user__userprofile__name__icontains=query)  # if you want full name search
+        ).order_by("-created_at")
+
+    return render(request, "search.html", {"results": results, "query": query})    
+
+@login_required(login_url='login')
+def user_profile_view(request, username):
+    user_obj = get_object_or_404(User, username=username)
+    profile = get_object_or_404(UserProfile, user=user_obj)
+    posts = Post.objects.filter(user=user_obj).order_by("-created_at")
+
+    # check if this is the logged-in user's own profile
+    is_owner = (request.user == user_obj)
+
+    return render(request, "profile.html", {
+        "profile": profile,
+        "posts": posts,
+        "is_owner": is_owner,   # pass flag to template
+    })
