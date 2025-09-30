@@ -1,6 +1,7 @@
 {% extends 'layouts/app.html' %}
 
 {% load static %}
+
 {% block css %}
 <link rel="stylesheet" href="{% static 'css/profile.css' %}">
 {% endblock%}
@@ -125,12 +126,7 @@
         <img class="post-img" src="{{ post.post_img.url }}" alt="Post Image" style="cursor: pointer;">
         {% endif %}
 
-        <!-- Image Modal -->
-        <div id="img-modal" class="img-modal">
-            <span class="close-img">&times;</span>
-            <img class="modal-content" id="modal-img">
-        </div>
-
+       
 
         <div class="user-details">
             {% if profile.profile_pic %}
@@ -164,15 +160,7 @@
             <p class="description">{{ post.description }}</p>
             <button class="read-more-btn">Read more</button>
         </div>
-        <!-- READ MORE POPUP  -->
-        <!-- Modal -->
-        <div id="desc-modal" class="desc-modal">
-            <div class="desc-modal-content">
-                <span class="close-btn">&times;</span>
-                <h4 id="modal-title" style="margin: 10px 0;"></h4>
-                <p id="full-desc"></p>
-            </div>
-        </div>
+       
 
 
         <div class="action-btn">
@@ -205,6 +193,22 @@
     {% endfor %}
 </div>
 
+ <!-- Image Modal -->
+        <div id="img-modal" class="img-modal">
+            <span class="close-img">&times;</span>
+            <img class="modal-content" id="modal-img">
+        </div>
+
+ <!-- READ MORE POPUP  -->
+        <!-- Modal -->
+        <div id="desc-modal" class="desc-modal">
+            <div class="desc-modal-content">
+                <span class="close-btn">&times;</span>
+                <h4 id="modal-title" style="margin: 10px 0;"></h4>
+                <p id="full-desc"></p>
+            </div>
+        </div>
+
 <!-- EDIT POPUP  -->
 <div id="editPopup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
      background:rgba(0,0,0,0.6); justify-content:center; align-items:center;">
@@ -224,153 +228,9 @@
     </div>
 </div>
 <!-- </div> -->
-<script>
-    const modal = document.getElementById('profileModal');
-    const btn = document.getElementById('manageProfileBtn');
-    const close = document.querySelector('.profile-close')
-
-    btn.onclick = function () {
-        modal.style.display = 'flex'; // show popup
-    }
-
-    close.onclick = function () {
-        modal.style.display = 'none'; // hide popup
-    }
-
-    // Close popup if user clicks outside modal
-    window.onclick = function (event) {
-        if (event.target == modal) {
-            modal.style.display = 'none';
-        }
-    }
-
-    const delProfile = document.querySelector('#del-profile');
-    const delPopup = document.querySelector('.del-popup');
-    const cancelBtn = document.querySelector('.profile-cancel');
-
-    delProfile.onclick = function () {
-        delPopup.style.display = 'flex'; // show popup
-    }
-
-    cancelBtn.onclick = function () {
-        delPopup.style.display = 'none'; // hide popup
-    }
-
-    document.getElementById("uploadBtn").onclick = function () {
-        document.getElementById("uploadPopup").style.display = "flex";
-    }
-
-    // --------------------------------------------------------------- 
-    // POST EDIT BUTTON 
-    document.addEventListener("DOMContentLoaded", function () {
-        const popup = document.getElementById("editPopup");
-        const closePopup = document.getElementById("closePopup");
-        const editForm = document.getElementById("editForm");
-        const editTitle = document.getElementById("editTitle");
-        const editDescription = document.getElementById("editDescription");
-
-        document.querySelectorAll(".edit-btn").forEach(btn => {
-            btn.addEventListener("click", function () {
-                const postId = this.getAttribute("data-post-id");
-                const title = this.getAttribute("data-title");
-                const description = this.getAttribute("data-description");
-
-                editTitle.value = title;
-                editDescription.value = description;
-
-                // update form action dynamically
-                editForm.action = `/post/${postId}/edit/`;
-
-                popup.style.display = "flex";
-            });
-        });
-
-        closePopup.addEventListener("click", function () {
-            popup.style.display = "none";
-        });
-    });
-
-    // ---------------------------------------------------- 
-    //  POST DELETE BUTTON 
-
-    // sab delete buttons select karo
-    document.querySelectorAll('.del-post-popup-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-
-            const postId = btn.getAttribute('data-post-id'); // button se post.id lo
-
-            const popupContainer = document.querySelector('.del-post-container');
-            const delForm = popupContainer.querySelector('.delpost-form');
-
-            // form action update karo sahi post ke liye
-            delForm.action = `/delete_post/${postId}/`;
-
-            // popup show karo
-            popupContainer.style.display = 'flex';
-        });
-    });
-
-    // Cancel button click pe popup close karo
-    document.querySelector('.del-post-cancel').addEventListener('click', () => {
-        document.querySelector('.del-post-container').style.display = 'none';
-    });
-
-    // -------------------------------------------------------------------------- 
-    // Description Read more or less 
-    const modall = document.getElementById('desc-modal');
-    const fullDesc = document.getElementById('full-desc');
-    const closeBtn = modall.querySelector('.close-btn');
-    const modalTitle = document.getElementById('modal-title');
-
-    document.querySelectorAll('.read-more-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const card = btn.closest(".card"); // parent card
-            const title = card.querySelector(".post-title").textContent;
-            const description = card.querySelector(".description").textContent;
-
-            modalTitle.textContent = title;
-            fullDesc.textContent = description;
-            modall.style.display = 'flex';
-        });
-    });
-
-    closeBtn.addEventListener('click', () => {
-        modall.style.display = 'none';
-    });
-
-    window.addEventListener('click', (e) => {
-        if (e.target === modall) modall.style.display = 'none';
-    });
-
-    // POST IMG OPEN 
-
-
-
-    const imgpopup = document.getElementById('img-modal');
-    const modalImg = document.getElementById('modal-img');
-    const closeimg = imgpopup.querySelector('.close-img');
-
-    // For all post images
-    document.querySelectorAll('.post-img').forEach(img => {
-        img.addEventListener('click', () => {
-            imgpopup.style.display = "flex";
-            modalImg.src = img.src;
-        });
-    });
-
-    closeimg.addEventListener('click', () => {
-        imgpopup.style.display = "none";
-    });
-
-    window.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            imgpopup.style.display = "none";
-        }
-    });
-
-
-</script>
-
 
 {% endblock %}
+
+{%block script%}
+<script src="{% static 'script/profile.js' %}"></script>
+{%endblock%}

@@ -6,6 +6,8 @@ from .models import UserProfile, Post
 from django.db import models
 from django.db.models import Q
 from django.contrib.auth.models import User
+from django.http import JsonResponse
+from django.core import serializers
 
 # Create your views here.
 
@@ -152,3 +154,35 @@ def user_profile_view(request, username):
         "posts": posts,
         "is_owner": is_owner,   # pass flag to template
     })
+
+
+# ----------------------------------------------- 
+from django.http import JsonResponse
+from django.template.loader import render_to_string
+import time
+
+def poll_new_posts(request):
+    last_check = float(request.GET.get("last_check", 0))
+    timeout = 15
+    start = time.time()
+
+    from .models import Post
+
+    while True:
+        latest_post = Post.objects.order_by('-created_at').first()
+
+        if latest_post and latest_post.created_at.timestamp() > last_check:
+         
+            html = render_to_string("post_card.html", {"posts": [latest_post]}, request=request)
+
+            return JsonResponse({
+                "new_post": True,
+                "post_id": latest_post.id,   # 👈 important for duplicate check in JS
+                "last_check": latest_post.created_at.timestamp(),
+                "html": html
+            })
+
+        if time.time() - start > timeout:
+            return JsonResponse({"new_post": False, "last_check": time.time()})
+
+        time.sleep(1)

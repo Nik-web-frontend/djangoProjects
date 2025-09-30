@@ -23,5 +23,6 @@ class Post(models.Model):
     post_img = models.ImageField(upload_to="post_pics/", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+
     def __str__(self):
         return f"{self.title} by {self.user.username}"

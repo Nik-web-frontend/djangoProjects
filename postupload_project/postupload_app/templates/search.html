@@ -145,7 +145,7 @@
             <span class="close-img">&times;</span>
             <img class="modal-content" id="modal-img">
         </div>
-        <a href="{% url 'user_profile' post.user.username %}" class="profile-link">
+        <a href="{% url 'user-profile' post.user.username %}" class="profile-link">
             <div class="profile-info">
                 {% if post.user.userprofile.profile_pic %}
                 <img src="{{ post.user.userprofile.profile_pic.url }}" class="profile-pic">
@@ -164,7 +164,7 @@
                     {% endif %}
                     {% if post.user.userprofile.profession %}
                     <p>{{ post.user.userprofile.profession }}</p>
-                    {% else %}
+                    {% else %} 
                     <p>Individual</p>
                     {% endif %}
                 </div>
