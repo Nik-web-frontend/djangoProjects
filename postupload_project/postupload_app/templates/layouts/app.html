@@ -19,7 +19,9 @@
     <title>Document</title>
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
     {% block css %}
+  
     {% endblock %}
+
 </head>
 
 
@@ -28,8 +30,8 @@
         <a class="logo" href="{% url 'dashboard' %}">PostUpload</a>
 
         <form method="get" action="{% url 'search' %}" class="search-form">
-            <input type="text" name="q" placeholder="Search by username or title..." required>
-            <button type="submit">Search</button>
+            <input type="text" class="search-inp" name="q" placeholder="Search by username or title..." required>
+            <button type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
         </form>
 
         <div class="action-links">

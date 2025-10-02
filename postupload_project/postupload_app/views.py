@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from .models import UserProfile, Post
+from .models import UserProfile, Post, DeletedPost, Like
 from django.db import models
 from django.db.models import Q
 from django.contrib.auth.models import User
@@ -44,6 +44,9 @@ def login_view(request):
 @login_required(login_url='login')  
 def dashboard_view(request):
     posts = Post.objects.all().order_by("-created_at")  # latest first
+    for post in posts:
+        # check if current user liked this post
+        post.is_liked = post.likes.filter(user=request.user).exists()
     return render(request, "dashboard.html", {"posts": posts})
 
 def logout_view(request):
@@ -69,6 +72,8 @@ def profile_view(request):
             profile.profile_pic = profile_pic
         profile.save()
         return redirect("profile")
+    for post in posts:
+        post.is_liked = post.likes.filter(user=request.user).exists()  # check current user like
 
     return render(request, "profile.html", {"profile": profile, "posts": posts,  "is_owner": True})
 
@@ -104,7 +109,10 @@ def upload_post(request):
 @login_required(login_url='login')
 def delete_post(request, post_id):
     post = get_object_or_404(Post, id=post_id, user=request.user)
-    post.delete()
+    if request.method == "POST":
+        # DeletedPost me add karo
+        DeletedPost.objects.create(post_id=post.id)
+        post.delete()
     return redirect("profile")
 
 
@@ -161,28 +169,74 @@ from django.http import JsonResponse
 from django.template.loader import render_to_string
 import time
 
+from django.utils import timezone
+import datetime
+
+@login_required(login_url='login')
 def poll_new_posts(request):
-    last_check = float(request.GET.get("last_check", 0))
-    timeout = 15
-    start = time.time()
+    try:
+        # Get the last_check timestamp from request
+        last_check = float(request.GET.get("last_check", 0))
+        # Convert float timestamp to UTC datetime
+        last_check_dt = datetime.datetime.fromtimestamp(last_check, tz=datetime.timezone.utc)
+    except (ValueError, TypeError):
+        # If invalid, use current time
+        last_check_dt = timezone.now()
+        last_check = last_check_dt.timestamp()
 
-    from .models import Post
+    # 1️⃣ Check for new or updated posts
+    posts = Post.objects.filter(updated_at__gt=last_check_dt).order_by('updated_at')
 
-    while True:
-        latest_post = Post.objects.order_by('-created_at').first()
+    post_html = ""
+    latest_timestamp = last_check
 
-        if latest_post and latest_post.created_at.timestamp() > last_check:
-         
-            html = render_to_string("post_card.html", {"posts": [latest_post]}, request=request)
+    if posts.exists():
+        for post in posts:
+            post_html += render_to_string("post_card.html", {"posts": [post]}, request=request)
+            ts = post.updated_at.timestamp()
+            if ts > latest_timestamp:
+                latest_timestamp = ts
 
-            return JsonResponse({
-                "new_post": True,
-                "post_id": latest_post.id,   # 👈 important for duplicate check in JS
-                "last_check": latest_post.created_at.timestamp(),
-                "html": html
-            })
+        return JsonResponse({
+            "new_post": True,
+            "last_check": latest_timestamp,
+            "html": post_html
+        })
 
-        if time.time() - start > timeout:
-            return JsonResponse({"new_post": False, "last_check": time.time()})
+    # 2️⃣ Check for deleted posts
+    deleted = DeletedPost.objects.filter(deleted_at__gt=last_check_dt).order_by('deleted_at')
+    if deleted.exists():
+        deleted_ids = list(deleted.values_list('post_id', flat=True))
+        latest_timestamp = deleted.last().deleted_at.timestamp()
+        return JsonResponse({
+            "deleted_post": True,
+            "last_check": latest_timestamp,
+            "deleted_ids": deleted_ids
+        })
 
-        time.sleep(1)
+    # 3️⃣ No changes
+    return JsonResponse({
+        "new_post": False,
+        "deleted_post": False,
+        "last_check": last_check
+    })
+
+# ---------------------  LIKES ----------------------------
+
+@login_required
+def toggle_like(request, post_id):
+    post = Post.objects.get(id=post_id)
+    user = request.user
+
+    like_obj = Like.objects.filter(post=post, user=user).first()
+    if like_obj:
+        like_obj.delete()
+        liked = False
+    else:
+        Like.objects.create(post=post, user=user)
+        liked = True
+
+    # Return updated count
+    like_count = post.likes.count()
+
+    return JsonResponse({"liked": liked, "like_count": like_count, "post_id": post_id})

@@ -122,6 +122,28 @@
         text-decoration: none;
         color: black;
     }
+
+    .like-btn {
+        background-color: transparent;
+        width: 50px;
+        border: none;
+        outline: none;
+        text-align: start;
+        margin-top: 10px;
+        font-size: 15px;
+    }
+
+    .heart-icon {
+        font-size: 20px;
+        color: navy;
+        /* default - unlike */
+        transition: color 0.3s;
+    }
+
+    .heart-icon.liked {
+        color: rgb(255, 0, 128)
+        /* when liked */
+    }
 </style>
 {% endblock%}
 
@@ -176,6 +198,14 @@
                 <button class="read-more-btn">Read more</button>
                 {% endif %}
             </div>
+            <!-- LIKE BUTTON  -->
+
+            <button class="like-btn" data-id="{{ post.id }}">
+                <i class="fa-solid fa-heart heart-icon {% if post.is_liked %}liked{% endif %}"></i>
+                <span class="like-count">{{ post.likes.count }}</span>
+            </button>
+
+
 
             <!-- Modal -->
             <div id="desc-modal" class="desc-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
@@ -197,9 +227,3 @@
 
 
 {% endblock %}
-
-
-
-
-
-   

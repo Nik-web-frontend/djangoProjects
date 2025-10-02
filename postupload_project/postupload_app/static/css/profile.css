@@ -584,3 +584,14 @@ textarea {
     color: white;
     cursor: pointer;
 }
+
+.heart-icon {
+    font-size: 20px;
+    color: navy;   /* default - unlike */
+    transition: color 0.3s;
+}
+
+.heart-icon.liked {
+    color: rgb(255, 0, 128);   /* when liked */
+}
+

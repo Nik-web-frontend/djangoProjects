@@ -14,7 +14,7 @@ urlpatterns = [
     path("post/<int:post_id>/edit/", views.edit_post, name="edit_post"),
     path("search/", views.search_view, name="search"),
     path("profile/<str:username>/", views.user_profile_view, name="user-profile"),
-    # path('get-new-posts/', views.get_new_posts, name='get_new_posts'),  # add this
     path("poll_new_posts/", views.poll_new_posts, name="poll_new_posts"),
+    path("toggle_like/<int:post_id>/", views.toggle_like, name="toggle_like"),
 
 ]

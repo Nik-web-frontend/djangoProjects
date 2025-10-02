@@ -1,4 +1,4 @@
-(function() {
+(function () {
     // ------------------- Variables -------------------
     const feedContainer = document.getElementById('show-feed'); // main container
     const feed = document.getElementById('feed'); // inner feed holding posts
@@ -54,27 +54,101 @@
     });
 
     // ------------------- Polling New Posts -------------------
-    async function poll(lastCheck) {
+    let lastCheck = Date.now() / 1000; // seconds timestamp
+
+    async function pollNewPosts() {
         try {
-            let res = await fetch(`/poll_new_posts?last_check=${lastCheck}`);
-            let data = await res.json();
+            const response = await fetch(`/poll_new_posts/?last_check=${lastCheck}`);
+            const data = await response.json();
 
             if (data.new_post) {
-                // Check if already in feed
-                const existing = feed.querySelector(`.post-card[data-id="${data.post_id}"]`);
-                if (!existing) {
-                    feed.insertAdjacentHTML("afterbegin", data.html);
-                }
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = data.html;
+
+                const posts = tempDiv.querySelectorAll('.post-card');
+
+                posts.forEach(post => {
+                    const postId = post.dataset.id;
+                    const existing = document.querySelector(`.post-card[data-id="${postId}"]`);
+
+                    if (existing) {
+                        // ✅ Replace the old post card completely
+                        existing.replaceWith(post);
+                    } else {
+                        // ✅ Prepend new post at top
+                        feed.insertAdjacentHTML('afterbegin', post.outerHTML);
+                    }
+                });
+
                 lastCheck = data.last_check;
             }
 
-            setTimeout(() => poll(lastCheck), 1000);
+            if (data.deleted_post) {
+                data.deleted_ids.forEach(id => {
+                    const el = document.querySelector(`.post-card[data-id="${id}"]`);
+                    if (el) el.remove();
+                });
+                lastCheck = data.last_check;
+            }
+
         } catch (err) {
             console.error("Polling error:", err);
-            setTimeout(() => poll(lastCheck), 5000);
         }
+
+        setTimeout(pollNewPosts, 3000); // repeat polling every 3s
     }
 
-    poll(0);
+    pollNewPosts();
+
+    // --------------------------LIKES---------------------------
+
+    document.addEventListener("click", async function (e) {
+    if (e.target.closest(".like-btn")) {
+        const btn = e.target.closest(".like-btn");
+        const postId = btn.dataset.id;
+        const heartIcon = btn.querySelector(".heart-icon");
+        const likeCount = btn.querySelector(".like-count");
+
+        try {
+            const response = await fetch(`/toggle_like/${postId}/`, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": getCookie("csrftoken"),
+                },
+            });
+            const data = await response.json();
+
+            if (data.post_id) {
+                likeCount.textContent = data.like_count;
+
+                if (data.liked) {
+                    heartIcon.classList.add("liked");  // pink
+                } else {
+                    heartIcon.classList.remove("liked"); // blue
+                }
+            }
+        } catch (err) {
+            console.error("Like toggle failed:", err);
+        }
+    }
+});
+
+// ✅ CSRF helper
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === name + "=") {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+
 
 })();

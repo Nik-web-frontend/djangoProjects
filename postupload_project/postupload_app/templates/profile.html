@@ -121,12 +121,12 @@
     {%endif%}
 
     {% for post in posts %}
-    <div class="card">
+    <div class="card" data-id="{{ post.id }}">
         {% if post.post_img %}
         <img class="post-img" src="{{ post.post_img.url }}" alt="Post Image" style="cursor: pointer;">
         {% endif %}
 
-       
+
 
         <div class="user-details">
             {% if profile.profile_pic %}
@@ -160,7 +160,7 @@
             <p class="description">{{ post.description }}</p>
             <button class="read-more-btn">Read more</button>
         </div>
-       
+
 
 
         <div class="action-btn">
@@ -175,6 +175,17 @@
                 <i class="fa-solid fa-trash" style="color: #ff0000;"></i>
             </button>
             {%endif%}
+
+            <!-- LIKE BUTTON  -->
+            
+            <button class="like-btn" data-id="{{ post.id }}">
+                <i class="fa-solid fa-heart heart-icon {% if post.is_liked %}liked{% endif %}"></i>
+                <span class="like-count">{{ post.likes.count }}</span>
+            </button>
+
+
+
+
 
         </div>
         <div class="del-post-container" style="display: none;">
@@ -193,21 +204,21 @@
     {% endfor %}
 </div>
 
- <!-- Image Modal -->
-        <div id="img-modal" class="img-modal">
-            <span class="close-img">&times;</span>
-            <img class="modal-content" id="modal-img">
-        </div>
+<!-- Image Modal -->
+<div id="img-modal" class="img-modal">
+    <span class="close-img">&times;</span>
+    <img class="modal-content" id="modal-img">
+</div>
 
- <!-- READ MORE POPUP  -->
-        <!-- Modal -->
-        <div id="desc-modal" class="desc-modal">
-            <div class="desc-modal-content">
-                <span class="close-btn">&times;</span>
-                <h4 id="modal-title" style="margin: 10px 0;"></h4>
-                <p id="full-desc"></p>
-            </div>
-        </div>
+<!-- READ MORE POPUP  -->
+<!-- Modal -->
+<div id="desc-modal" class="desc-modal">
+    <div class="desc-modal-content">
+        <span class="close-btn">&times;</span>
+        <h4 id="modal-title" style="margin: 10px 0;"></h4>
+        <p id="full-desc"></p>
+    </div>
+</div>
 
 <!-- EDIT POPUP  -->
 <div id="editPopup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
@@ -233,4 +244,55 @@
 
 {%block script%}
 <script src="{% static 'script/profile.js' %}"></script>
+<script>
+    // --------------------------LIKES---------------------------
+
+    document.addEventListener("click", async function (e) {
+        if (e.target.closest(".like-btn")) {
+            const btn = e.target.closest(".like-btn");
+            const postId = btn.dataset.id;
+            const heartIcon = btn.querySelector(".heart-icon");
+            const likeCount = btn.querySelector(".like-count");
+
+            try {
+                const response = await fetch(`/toggle_like/${postId}/`, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": getCookie("csrftoken"),
+                    },
+                });
+                const data = await response.json();
+
+                if (data.post_id) {
+                    likeCount.textContent = data.like_count;
+
+                    if (data.liked) {
+                        heartIcon.classList.add("liked");  // pink
+                    } else {
+                        heartIcon.classList.remove("liked"); // blue
+                    }
+                }
+            } catch (err) {
+                console.error("Like toggle failed:", err);
+            }
+        }
+    });
+
+    // ✅ CSRF helper
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === name + "=") {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+</script>
 {%endblock%}
